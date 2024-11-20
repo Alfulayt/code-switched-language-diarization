@@ -43,21 +43,28 @@ class Model(nn.Module):
 
         return x, lengths
 
-def wavlm_for_ld(diarization_config=0, backbone='wavlm-large', pretrained=True, progress=True, device='cuda'):
-    """Load a fine-tuned wavlm model for LD for a diarzation config
+def wavlm_for_ld(diarization_config=0, backbone='wavlm-large', pretrained=True, progress=True, device=None):
+    """Load a fine-tuned wavlm model for LD for a diarization config
         0 - eng/other
         1 - eng/nguni/sesotho-tswana
         2 - eng/zulu/xhosa/sesotho/setswana
     """
 
-    if diarization_config == 0: ckpt_url = 'https://github.com/GeoffreyFrost/code-switched-language-diarization/releases/download/v1.0.0/WavLM-Large-ld-0.pt'
-    if diarization_config == 1: ckpt_url = 'https://github.com/GeoffreyFrost/code-switched-language-diarization/releases/download/v1.0.0/WavLM-Large-ld-1.pt'
-    if diarization_config == 2: ckpt_url = 'https://github.com/GeoffreyFrost/code-switched-language-diarization/releases/download/v1.0.0/WavLM-Large-ld-2.pt'
+    if diarization_config == 0:
+        ckpt_url = 'https://github.com/GeoffreyFrost/code-switched-language-diarization/releases/download/v1.0.0/WavLM-Large-ld-0.pt'
+    elif diarization_config == 1:
+        ckpt_url = 'https://github.com/GeoffreyFrost/code-switched-language-diarization/releases/download/v1.0.0/WavLM-Large-ld-1.pt'
+    elif diarization_config == 2:
+        ckpt_url = 'https://github.com/GeoffreyFrost/code-switched-language-diarization/releases/download/v1.0.0/WavLM-Large-ld-2.pt'
+    else:
+        raise ValueError("Invalid diarization_config. Choose 0, 1, or 2.")
 
     model = Model(diarization_config, backbone)
 
     if pretrained:
-        state_dict = torch.hub.load_state_dict_from_url(ckpt_url, progress=progress)
+        # Automatically map the state_dict to the correct device
+        map_location = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        state_dict = torch.hub.load_state_dict_from_url(ckpt_url, progress=progress, map_location=map_location)
         model.load_state_dict(state_dict)
     
     device = torch.device(device)
